@@ -28,6 +28,6 @@ class CreateJurisdicaoTable extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('jurisdicao');
+        Schema::dropIfExists('jurisprudencia');
     }
 }
