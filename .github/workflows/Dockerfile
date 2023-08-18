@@ -33,5 +33,4 @@ RUN set -ex \
 WORKDIR /opt/www
 
 COPY ./../../ /opt/www
-RUN cp /opt/www/.env.example ./.env
 RUN composer install && php bin/hyperf.php
