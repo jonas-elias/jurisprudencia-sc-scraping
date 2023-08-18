@@ -1,0 +1,20 @@
+version: '3'
+name: jurisprudencia-sc-scraping
+services:
+  hyperf:
+    container_name: jurisprudencia-sc-scraping-hyperf
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 9501:9501
+    tty: true
+    stdin_open: true
+  db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - 5432:5432
