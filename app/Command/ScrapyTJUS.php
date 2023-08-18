@@ -8,12 +8,17 @@ use App\Scrapy\ScrapyJusSC;
 use Hyperf\Command\Command as HyperfCommand;
 use Hyperf\Command\Annotation\Command;
 use Psr\Container\ContainerInterface;
-
-use function Hyperf\Coroutine\co;
+use Symfony\Component\Console\Input\InputArgument;
 
 #[Command]
 class ScrapyTJUS extends HyperfCommand
 {
+    /**
+     * The command
+     *
+     * @var int
+     */
+    protected ?int $numberPages = 10;
 
     public function __construct(protected ContainerInterface $container, protected ScrapyJusSC $scrapy)
     {
@@ -28,7 +33,19 @@ class ScrapyTJUS extends HyperfCommand
 
     public function handle()
     {
+        $this->numberPages = (int) $this->input->getArgument('numberPages');
+        $pags = [];
+        for ($i = 1; $i <= $this->numberPages; $i++) { 
+            $pags[] = $i;
+        }
         $this->line('Comando acionado!', 'info');
-        $this->scrapy->scrapyJusSC([15, 16, 17, 18, 19, 20]);
+        $this->scrapy->scrapyJusSC($pags);
+    }
+
+    protected function getArguments()
+    {
+        return [
+            ['numberPages', InputArgument::OPTIONAL]
+        ];
     }
 }
