@@ -55,4 +55,25 @@ trait FormatScrapy
     {
         return str_replace(array("\r", "\n", "\t"), '', trim($nodeCabecalho));
     }
+
+    /**
+     * Method to wait next request
+     *
+     * @param int $seconds
+     * @return void
+     */
+    public function waitNextScraping(int $seconds): void
+    {
+        sleep($seconds);
+    }
+
+    /**
+     * Method to get actual date
+     *
+     * @return string|false
+     */
+    public function getActualDate(): string
+    {
+        return date('d/m/Y H:i:s a', time());
+    }
 }
