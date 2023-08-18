@@ -11,7 +11,7 @@ class CreateJurisdicaoTable extends Migration
      */
     public function up(): void
     {
-        Schema::create('jurisdicao', function (Blueprint $table) {
+        Schema::create('jurisprudencia', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->string('processo')->nullable(true);
             $table->string('relator')->nullable(true);
@@ -19,7 +19,7 @@ class CreateJurisdicaoTable extends Migration
             $table->string('orgao_julgador')->nullable(true);
             $table->string('julgado_em')->nullable(true);
             $table->string('classe')->nullable(true);
-            $table->string('texto', 131072)->nullable(true);
+            $table->string('texto', 10485760)->nullable(true);
         });
     }
 
