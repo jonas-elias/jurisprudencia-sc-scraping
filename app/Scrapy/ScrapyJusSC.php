@@ -3,13 +3,14 @@
 namespace App\Scrapy;
 
 use App\Scrapy\Trait\FormatScrapy;
+use Exception;
 use GuzzleHttp\Client;
 use Hyperf\DbConnection\Db;
 use Hyperf\Di\Annotation\Inject;
-use Hyperf\Guzzle\ClientFactory;
+use Hyperf\Logger\LoggerFactory;
+use Psr\Log\LoggerInterface;
+use Symfony\Component\Console\Output\ConsoleOutput;
 use voku\helper\HtmlDomParser;
-
-use function Hyperf\Coroutine\co;
 
 /**
  * class ScrapyJusSC
@@ -20,8 +21,22 @@ class ScrapyJusSC
 {
     use FormatScrapy;
 
+    /**
+     * @var Client
+     */
     #[Inject]
-    protected Client $clientHttp;
+    protected $clientHttp;
+
+    /**
+     * @var ConsoleOutput
+     */
+    #[Inject]
+    protected $output;
+
+    /**
+     * @var LoggerInterface
+     */
+    protected $logger;
 
     /**
      * @var string $linkResultadosIniciais
@@ -42,8 +57,15 @@ class ScrapyJusSC
         'lupa' => 2
     ];
 
-    public function __construct()
+    /**
+     * Method constructor
+     *
+     * @param LoggerFactory $logger
+     * @return void
+     */
+    public function __construct(LoggerFactory $logger)
     {
+        $this->logger = $logger->get('log', 'default');
     }
 
     /**
@@ -55,51 +77,59 @@ class ScrapyJusSC
     public function scrapyJusSC(array $pags): void
     {
         $textos = [];
+        $inicio = $this->getActualDate();
 
         foreach ($pags as $pag) {
-            $response = $this->clientHttp->get($this->linkResultadosIniciais . $pag);
-            $htmlString = (string) $response->getBody();
-            $divPrincipal = HtmlDomParser::str_get_html($htmlString)->find('#coluna_principal');
+            try {
+                $response = $this->clientHttp->get($this->linkResultadosIniciais . $pag);
+                $htmlString = (string) $response->getBody();
+                $divPrincipal = HtmlDomParser::str_get_html($htmlString)->find('#coluna_principal');
 
-            foreach ($divPrincipal->find(".resultados") as $chaveResultado => $resultado) {
+                foreach ($divPrincipal->find(".resultados") as $chaveResultado => $resultado) {
+                    foreach ($resultado->getElementByClass("icones") as $chaveIcone => $subValue) {
+                        if ($chaveIcone === $this->iconesResultadoInicial['html']) {
+                            $divElement = $subValue->find('.icones', 0);
+                            $href = $divElement->find('a', 0)->href;
+                            $response = $this->clientHttp->get($this->linkHtmlProcesso . $href);
+                            $htmlString = (string) $response->getBody();
+                            $htmlDomParser = HtmlDomParser::str_get_html($htmlString);
+                            $colunaPrincipal = $htmlDomParser->find("#coluna_principal");
+                            $resultados = $colunaPrincipal->find(".resultados");
+                            $paragrafo = $this->formatParagrafo(($htmlDomParser->find('.integra_paragrafo'))->plaintext[0]);
+                            $textos[$pag][$chaveResultado]['texto'] = $paragrafo;
 
-                foreach ($resultado->getElementByClass("icones") as $chaveIcone => $subValue) {
-                    if ($chaveIcone === $this->iconesResultadoInicial['html']) {
-                        $divElement = $subValue->find('.icones', 0);
-                        $href = $divElement->find('a', 0)->href;
-                        $response = $this->clientHttp->get($this->linkHtmlProcesso . $href);
-                        $htmlString = (string) $response->getBody();
-                        $htmlDomParser = HtmlDomParser::str_get_html($htmlString);
-                        $colunaPrincipal = $htmlDomParser->find("#coluna_principal");
-                        $resultados = $colunaPrincipal->find(".resultados");
-                        $paragrafo = $this->formatParagrafo(($htmlDomParser->find('.integra_paragrafo'))->plaintext[0]);
-                        $textos[$pag][$chaveResultado]['texto'] = $paragrafo;
+                            foreach ($resultados->find('strong') as $cabecalho) {
+                                $nextNode = $cabecalho->next_sibling();
 
-                        foreach ($resultados->find('strong') as $cabecalho) {
-                            $nextNode = $cabecalho->next_sibling();
+                                if (
+                                    $cabecalho->plaintext == "Processo:" || $cabecalho->plaintext == "Relator:" ||
+                                    $cabecalho->plaintext == "Origem:" || $cabecalho->plaintext == "Orgão Julgador:" ||
+                                    $cabecalho->plaintext == "Classe:" || $cabecalho->plaintext == "Julgado em:"
+                                ) {
 
-                            if (
-                                $cabecalho->plaintext == "Processo:" || $cabecalho->plaintext == "Relator:" ||
-                                $cabecalho->plaintext == "Origem:" || $cabecalho->plaintext == "Orgão Julgador:" ||
-                                $cabecalho->plaintext == "Classe:" || $cabecalho->plaintext == "Julgado em:"
-                            ) {
+                                    $chaveCabecalho = $this->formatChave($cabecalho->plaintext);
+                                    $node = $this->formatNode($nextNode->data);
 
-                                $chaveCabecalho = $this->formatChave($cabecalho->plaintext);
-                                $node = $this->formatNode($nextNode->data);
-
-                                $textos[$pag][$chaveResultado][$chaveCabecalho] = $node;
+                                    $textos[$pag][$chaveResultado][$chaveCabecalho] = $node;
+                                }
                             }
+                            $this->waitNextScraping(1);
                         }
                     }
                 }
+
+                Db::table('jurisprudencia')->insert($textos[$pag]);
+                $textos = [];
+            } catch (\Throwable $th) {
+                $this->output->writeln("<error>Erro na página {$pag}</error>");
+                $this->logger->error($th->getMessage());
+                $this->waitNextScraping(5);
+                continue;
             }
         }
-        try {
-            foreach ($pags as $key => $value) {
-                Db::table('jurisdicao')->insert($textos[$value]);
-            }
-        } catch (\Throwable $th) {
-            dd($th->getMessage() . $th->getLine());
-        }
+
+        $fim = $this->getActualDate();
+        $this->output->writeln("<info>Execução iniciada em {$inicio}</infor>");
+        $this->output->writeln("<info>Execução finalizada em {$fim}</infor>");
     }
 }
