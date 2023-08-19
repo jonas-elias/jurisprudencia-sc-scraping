@@ -1,43 +1,26 @@
-# Introduction
+# 📚 Scraping de Jurisprudências - TJSC
 
-This is a skeleton application using the Hyperf framework. This application is meant to be used as a starting place for those looking to get their feet wet with Hyperf Framework.
+Este repositório tem como objetivo aplicar o scraping no website [https://busca.tjsc.jus.br/jurisprudencia](https://busca.tjsc.jus.br/jurisprudencia). O código foi desenvolvido em PHP e é capaz de extrair informações relevantes, como número do processo, relator, origem, órgão julgador, entre outros, e persisti-las no banco de dados PostgreSQL.
 
-# Requirements
+## Utilização
 
-Hyperf has some requirements for the system environment, it can only run under Linux and Mac environment, but due to the development of Docker virtualization technology, Docker for Windows can also be used as the running environment under Windows.
-
-The various versions of Dockerfile have been prepared for you in the [hyperf/hyperf-docker](https://github.com/hyperf/hyperf-docker) project, or directly based on the already built [hyperf/hyperf](https://hub.docker.com/r/hyperf/hyperf) Image to run.
-
-When you don't want to use Docker as the basis for your running environment, you need to make sure that your operating environment meets the following requirements:  
-
- - PHP >= 8.0
- - Any of the following network engines
-   - Swoole PHP extension >= 4.5，with `swoole.use_shortname` set to `Off` in your `php.ini`
-   - Swow PHP extension (Beta)
- - JSON PHP extension
- - Pcntl PHP extension
- - OpenSSL PHP extension （If you need to use the HTTPS）
- - PDO PHP extension （If you need to use the MySQL Client）
- - Redis PHP extension （If you need to use the Redis Client）
- - Protobuf PHP extension （If you need to use the gRPC Server or Client）
-
-# Installation using Composer
-
-The easiest way to create a new Hyperf project is to use [Composer](https://getcomposer.org/). If you don't have it already installed, then please install as per [the documentation](https://getcomposer.org/download/).
-
-To create your new Hyperf project:
-
-```bash
-$ composer create-project hyperf/hyperf-skeleton path/to/install
+1. Execute a imagem Docker através do seguinte comando:
+```
+docker-compose up -d
 ```
 
-Once installed, you can run the server immediately using the command below.
-
-```bash
-$ cd path/to/install
-$ php bin/hyperf.php start
+2. Dentro do container Hyperf, execute os comandos para instalar o componente e atualizar as migrações:
+```
+php bin/hyperf.php migrate:install
+php bin/hyperf.php migrate:fresh
 ```
 
-This will start the cli-server on port `9501`, and bind it to all network interfaces. You can then visit the site at `http://localhost:9501/`
+3. Realize a geração das jurisprudências utilizando o comando:
+```
+php bin/hyperf.php scrapy:scjus numeroDePaginas
+```
 
-which will bring up Hyperf default home page.
+Após a execução bem-sucedida desses passos, as informações extraídas estarão disponíveis no banco de dados PostgreSQL. 
+
+## Observação
+Em caso de erros ou bloqueios durante o processo, os logs estarão disponíveis em `runtime/logs/` para análise posterior.
