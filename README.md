@@ -9,7 +9,7 @@ Este repositório tem como objetivo aplicar o scraping no website [busca.tjsc.ju
 docker-compose up -d
 ```
 
-2. Dentro do container Hyperf, execute os comandos para instalar o componente e atualizar as migrações:
+2. Dentro do container Hyperf, execute os comandos para instalar o componente e atualizar as migrations:
 ```
 php bin/hyperf.php migrate:install
 php bin/hyperf.php migrate:fresh
