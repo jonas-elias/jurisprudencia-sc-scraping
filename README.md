@@ -1,6 +1,6 @@
 # 📚 Scraping de Jurisprudências - TJSC
 
-Este repositório tem como objetivo aplicar o scraping no website [https://busca.tjsc.jus.br/jurisprudencia](https://busca.tjsc.jus.br/jurisprudencia). O código foi desenvolvido em PHP e é capaz de extrair informações relevantes, como número do processo, relator, origem, órgão julgador, entre outros, e persisti-las no banco de dados PostgreSQL.
+Este repositório tem como objetivo aplicar o scraping no website [busca.tjsc.jus.br/jurisprudencia](https://busca.tjsc.jus.br/jurisprudencia). O código foi desenvolvido em PHP e é capaz de extrair informações relevantes, como número do processo, relator, origem, órgão julgador, entre outros, e persisti-las no banco de dados PostgreSQL.
 
 ## Utilização
 
